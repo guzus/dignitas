@@ -82,7 +82,7 @@ const TrustGraph = ({
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full min-h-[500px] bg-slate-950 rounded-lg overflow-hidden relative border border-slate-800 group">
+    <div ref={containerRef} className="w-full h-full min-h-[600px] bg-slate-950 rounded-lg overflow-hidden relative border border-slate-800 group" style={{ aspectRatio: '4/3' }}>
       
       {hoveredNode && !selectedLink && (
         <div 

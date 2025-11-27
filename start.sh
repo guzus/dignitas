@@ -3,6 +3,11 @@
 
 echo "🚀 Starting Dignitas..."
 
+# Kill any existing processes on our ports
+lsof -ti:8000 | xargs kill -9 2>/dev/null
+lsof -ti:3000 | xargs kill -9 2>/dev/null
+lsof -ti:3001 | xargs kill -9 2>/dev/null
+
 # Check for uv and pnpm
 if ! command -v uv &> /dev/null; then
     echo "❌ uv is not installed. Please install it: curl -LsSf https://astral.sh/uv/install.sh | sh"
@@ -22,7 +27,7 @@ if [ ! -d ".venv" ]; then
     uv venv
 fi
 source .venv/bin/activate
-uv pip install -r requirements.txt
+uv pip install -r requirements.txt --quiet
 
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 GRAPH_PID=$!
@@ -33,9 +38,7 @@ sleep 2
 # Start API Gateway
 echo "Starting API Gateway on :3000..."
 cd api
-if [ ! -d "node_modules" ]; then
-    pnpm install
-fi
+pnpm install --silent
 pnpm run dev &
 API_PID=$!
 cd ..
@@ -45,10 +48,7 @@ sleep 2
 # Start Frontend
 echo "Starting Frontend on :3001..."
 cd frontend
-if [ ! -d "node_modules" ]; then
-    pnpm install
-fi
-# Next.js usually runs on 3000, but our API is on 3000.
+pnpm install --silent
 pnpm run dev -p 3001 &
 FRONTEND_PID=$!
 cd ..

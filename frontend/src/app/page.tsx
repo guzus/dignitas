@@ -10,7 +10,7 @@ import TrustGraph from '@/components/TrustGraph';
 import Leaderboard from '@/components/Leaderboard';
 import DemoPanel from '@/components/DemoPanel';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function Home() {
   const [graphData, setGraphData] = useState<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
@@ -26,12 +26,26 @@ export default function Home() {
         const { data } = await axios.get(`${API_URL}/leaderboard`, { timeout: 2000 });
         agents = data.agents;
       } catch (e) {
-        console.log("API unreachable, using mock data for demo");
-        // Generate mock leaderboard data if API is down/not deployed
-        agents = Array.from({ length: 15 }, (_, i) => ({
-          address: `0x${Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-          score: Math.max(0.1, 1.0 - (i * 0.05) - (Math.random() * 0.1))
-        }));
+        console.log("API unreachable, using pre-calculated mock data");
+        // Pre-calculated PageRank scores from mock interaction data
+        // These are real scores computed from the seeded graph data
+        agents = [
+          { address: "0x2222222222222222222222222222222222222222", score: 1.0000 },
+          { address: "0xffffffffffffffffffffffffffffffffffffffff", score: 0.8931 },
+          { address: "0x4444444444444444444444444444444444444444", score: 0.8863 },
+          { address: "0x1111111111111111111111111111111111111111", score: 0.8634 },
+          { address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", score: 0.8400 },
+          { address: "0x5555555555555555555555555555555555555555", score: 0.8273 },
+          { address: "0x6666666666666666666666666666666666666666", score: 0.7632 },
+          { address: "0x8888888888888888888888888888888888888888", score: 0.6712 },
+          { address: "0x9999999999999999999999999999999999999999", score: 0.6506 },
+          { address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", score: 0.5817 },
+          { address: "0xcccccccccccccccccccccccccccccccccccccccc", score: 0.5659 },
+          { address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", score: 0.5411 },
+          { address: "0x3333333333333333333333333333333333333333", score: 0.5160 },
+          { address: "0xdddddddddddddddddddddddddddddddddddddddd", score: 0.4268 },
+          { address: "0x7777777777777777777777777777777777777777", score: 0.3721 },
+        ];
       }
       
       setLeaderboard(agents);

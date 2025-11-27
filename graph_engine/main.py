@@ -23,7 +23,8 @@ engine = DignitasPageRank()
 # --- Seed with demo data on startup ---
 @app.on_event("startup")
 def seed_demo_data():
-    """Create realistic demo graph."""
+    """Create realistic demo graph with deterministic data."""
+    random.seed(42)  # Fixed seed for reproducible scores
     agents = [
         "0x1111111111111111111111111111111111111111",  # High trust
         "0x2222222222222222222222222222222222222222",  # High trust

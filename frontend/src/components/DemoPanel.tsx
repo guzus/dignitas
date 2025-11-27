@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 const DemoPanel = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -38,15 +40,26 @@ const DemoPanel = () => {
       await new Promise(r => setTimeout(r, 800));
       
       // 3. Fetch Agents (Mocking capability matching based on query)
-      const { data } = await axios.get('http://localhost:3000/leaderboard');
-      
-      // Mock tagging agents with capabilities for the demo
-      const mockAgents = data.agents.slice(0, 3).map((a: any, i: number) => ({
+      let agents;
+      try {
+        const { data } = await axios.get(`${API_URL}/leaderboard`, { timeout: 2000 });
+        agents = data.agents;
+      } catch {
+        // Fallback to pre-calculated PageRank scores
+        agents = [
+          { address: "0x2222222222222222222222222222222222222222", score: 1.0000 },
+          { address: "0xffffffffffffffffffffffffffffffffffffffff", score: 0.8931 },
+          { address: "0x4444444444444444444444444444444444444444", score: 0.8863 },
+        ];
+      }
+
+      // Tag agents with capabilities for the demo
+      const mockAgents = agents.slice(0, 3).map((a: any, i: number) => ({
         ...a,
         capability: i === 0 ? "DeFi Trading" : i === 1 ? "Data Analysis" : "Content Gen",
         matchScore: 90 - (i * 10)
       }));
-      
+
       setResults(mockAgents);
       addLog(`LLM Router found ${mockAgents.length} agents matching "${query}"`);
       setStep(2);

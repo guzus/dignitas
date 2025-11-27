@@ -4,35 +4,33 @@
 
 Dignitas is a decentralized reputation protocol that enables AI agents to discover and transact with high-trust peers. It uses a weighted PageRank algorithm to compute trust scores based on economic commitments (x402 payments) and social signals (feedback).
 
-![Dignitas Dashboard](https://via.placeholder.com/1200x600/0f172a/38bdf8?text=Dignitas+Dashboard+Preview)
-
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+
-- Python 3.10+
+- Python 3.11+
 - pnpm (`npm install -g pnpm`)
-- uv (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ### 1. Clone and Install
 ```bash
-git clone <repo>
+git clone git@github.com:guzus/dignitas.git
 cd dignitas
 pnpm install
 ```
 
 ### 2. Set Environment
 Create a `.env` file in the root directory:
-```bash
-cp .env.example .env
-```
-Update `.env` with your details:
 ```env
 PRIVATE_KEY=0xYourPrivateKey
 TREASURY_ADDRESS=0xYourTreasuryAddress
 GRAPH_ENGINE_URL=http://localhost:8000
+```
+
+For the frontend (in `frontend/.env.local`):
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
 ### 3. Start All Services
@@ -49,7 +47,7 @@ chmod +x start.sh
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -68,14 +66,14 @@ chmod +x start.sh
 
 | Component | Tech Stack | Description |
 |-----------|------------|-------------|
-| **Graph Engine** | Python, NetworkX, FastAPI | Computes PageRank scores. Uses `uv` for package management. |
-| **API Gateway** | Node.js, Express, x402 | Monetized API gateway. Uses `pnpm`. |
-| **Frontend** | Next.js 15, Tailwind, Shadcn | Modern dashboard. Uses `pnpm`. |
-| **Client SDK** | TypeScript | SDK for agents. |
+| **Graph Engine** | Python 3.11, NetworkX, FastAPI | Computes PageRank scores |
+| **API Gateway** | Node.js, Express, TypeScript | Monetized x402 API gateway |
+| **Frontend** | Next.js 16, React 19, Tailwind, shadcn/ui | Interactive dashboard |
+| **Client SDK** | TypeScript | SDK for agents |
 
 ---
 
-## 🧪 Running the Demo
+## Running the Demo
 
 Simulate an agent discovery flow where an agent pays to find trusted peers and then interacts with them.
 
@@ -93,7 +91,7 @@ pnpm run demo
 
 ---
 
-## 📊 PageRank Algorithm
+## PageRank Algorithm
 
 The core of Dignitas is a modified PageRank algorithm:
 
@@ -107,17 +105,21 @@ PR(A) = (1-d) + d × Σ(PR(Ti) × W / C)
 
 ---
 
-## 🛠 Development
+## Development
 
 ### Directory Structure
 ```
 .
-├── api/            # Node.js x402 Gateway
-├── client/         # TypeScript SDK
-├── demo/           # CLI Demo Script
-├── frontend/       # Next.js Dashboard
-├── graph_engine/   # Python Reputation Engine
-└── start.sh        # Startup Script
+├── api/              # Express.js x402 API Gateway
+├── client/           # TypeScript SDK
+├── demo/             # CLI Demo Script
+├── frontend/         # Next.js Dashboard
+├── graph_engine/     # Python PageRank Engine
+│   ├── main.py       # FastAPI server
+│   ├── pagerank.py   # PageRank algorithm
+│   ├── Procfile      # Railway deployment
+│   └── runtime.txt   # Python version
+└── start.sh          # Local startup script
 ```
 
 ### Manual Startup
@@ -148,6 +150,35 @@ npm run dev -- -p 3001
 
 ---
 
-## 📄 License
+## Deployment (Railway)
+
+### 1. Deploy Graph Engine
+```bash
+cd graph_engine
+railway init
+railway up
+```
+Copy the deployed URL (e.g., `https://graph-engine-xxx.railway.app`)
+
+### 2. Deploy API Gateway
+```bash
+cd api
+railway init
+railway up
+```
+Set environment variable in Railway:
+```
+GRAPH_ENGINE_URL=https://graph-engine-xxx.railway.app
+```
+
+### 3. Deploy Frontend (Vercel recommended)
+Set environment variable:
+```
+NEXT_PUBLIC_API_URL=https://api-xxx.railway.app
+```
+
+---
+
+## License
 
 MIT
