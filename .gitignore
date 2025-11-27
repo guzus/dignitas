@@ -1,40 +1,47 @@
-# General
-.DS_Store
-*.log
-.env
-.env.local
-.env.*.local
-
-# Node.js
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
 build/
-coverage/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm/
+.next/
+out/
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
 .venv/
-env/
+venv/
 .env/
 *.egg-info/
-.pytest_cache/
 
-# Next.js
-.next/
-out/
+# Environment variables
+.env
+.env.local
+.env.*.local
 
-# IDEs
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
+*~
 
-# Project specific
-dignitas/
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.tsbuildinfo
+.turbo/
