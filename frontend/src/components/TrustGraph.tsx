@@ -45,8 +45,8 @@ const TrustGraph = ({
   // Focus on selected agent when it changes
   useEffect(() => {
     if (selectedAgent && fgRef.current) {
-      const node = data.nodes.find(n => n.id === selectedAgent);
-      if (node) {
+      const node = data.nodes.find(n => n.id === selectedAgent) as any;
+      if (node && typeof node.x === 'number' && typeof node.y === 'number') {
         // Center view on node
         fgRef.current.centerAt(node.x, node.y, 1000);
         fgRef.current.zoom(2.5, 1000);
@@ -167,7 +167,7 @@ const TrustGraph = ({
         nodeLabel={() => ""} // Disable default label
         onNodeHover={(node) => setHoveredNode(node)}
         onNodeClick={(node) => {
-          onSelectAgent(node.id);
+          onSelectAgent(node.id as string);
           // Center view on node
           fgRef.current.centerAt(node.x, node.y, 1000);
           fgRef.current.zoom(2.5, 1000);
