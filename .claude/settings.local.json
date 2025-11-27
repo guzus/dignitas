@@ -6,7 +6,12 @@
       "Bash(uv run python:*)",
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
-      "Bash(pnpm install)"
+      "Bash(pnpm install)",
+      "Bash(find:*)",
+      "Bash(pnpm build:*)",
+      "Bash(npm install:*)",
+      "Bash(netlify deploy:*)",
+      "Bash(netlify sites:create:*)"
     ],
     "deny": [],
     "ask": []

@@ -2,40 +2,34 @@ import React from 'react';
 import { Trophy } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getAgentByAddress } from '@/data/mockData';
 
 interface Agent {
   address: string;
   score: number;
 }
 
-const Leaderboard = ({ 
-  agents, 
-  selectedAgent, 
-  onSelectAgent 
-}: { 
-  agents: any[], 
-  selectedAgent: string | null, 
-  onSelectAgent: (id: string | null) => void 
+const Leaderboard = ({
+  agents,
+  selectedAgent,
+  onSelectAgent
+}: {
+  agents: any[],
+  selectedAgent: string | null,
+  onSelectAgent: (id: string | null) => void
 }) => {
-  // Mock metadata for demo purposes
+  // Get agent metadata from mock data
   const getAgentMetadata = (address: string, index: number) => {
-    const names = [
-      "AlphaVault", "DataOracle X", "SentimentAI", "YieldOptimizer", 
-      "BridgeBot", "NFT Scout", "GovDelegate", "AuditLayer"
-    ];
-    const descs = [
-      "High-frequency DeFi trading strategies",
-      "Real-time cross-chain data feeds",
-      "Social sentiment analysis engine",
-      "Auto-compounding yield farmer",
-      "Secure cross-L2 bridging service",
-      "Rare NFT sniper and valuation",
-      "DAO governance voting automation",
-      "Smart contract security auditor"
-    ];
+    const agent = getAgentByAddress(address);
+    if (agent) {
+      return {
+        name: agent.name,
+        desc: agent.description
+      };
+    }
     return {
-      name: names[index] || `Agent ${address.slice(2, 6)}`,
-      desc: descs[index] || "Autonomous agent service"
+      name: `Agent ${address.slice(2, 6)}`,
+      desc: "Autonomous agent service"
     };
   };
 

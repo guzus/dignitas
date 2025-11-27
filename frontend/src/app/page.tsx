@@ -9,8 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import TrustGraph from '@/components/TrustGraph';
 import Leaderboard from '@/components/Leaderboard';
 import DemoPanel from '@/components/DemoPanel';
+import { mockLeaderboard, mockGraphData } from '@/data/mockData';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Set to true for standalone frontend deployment (no backend required)
+const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
 export default function Home() {
   const [graphData, setGraphData] = useState<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
@@ -21,37 +24,31 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
+      // Use mock data for standalone deployment
+      if (USE_MOCK_DATA) {
+        console.log("Using mock data for standalone demo");
+        setLeaderboard(mockLeaderboard);
+        setGraphData(mockGraphData);
+        setLoading(false);
+        return;
+      }
+
       let agents = [];
       try {
         const { data } = await axios.get(`${API_URL}/leaderboard`, { timeout: 2000 });
         agents = data.agents;
       } catch (e) {
         console.log("API unreachable, using pre-calculated mock data");
-        // Pre-calculated PageRank scores from mock interaction data
-        // These are real scores computed from the seeded graph data
-        agents = [
-          { address: "0x2222222222222222222222222222222222222222", score: 1.0000 },
-          { address: "0xffffffffffffffffffffffffffffffffffffffff", score: 0.8931 },
-          { address: "0x4444444444444444444444444444444444444444", score: 0.8863 },
-          { address: "0x1111111111111111111111111111111111111111", score: 0.8634 },
-          { address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", score: 0.8400 },
-          { address: "0x5555555555555555555555555555555555555555", score: 0.8273 },
-          { address: "0x6666666666666666666666666666666666666666", score: 0.7632 },
-          { address: "0x8888888888888888888888888888888888888888", score: 0.6712 },
-          { address: "0x9999999999999999999999999999999999999999", score: 0.6506 },
-          { address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", score: 0.5817 },
-          { address: "0xcccccccccccccccccccccccccccccccccccccccc", score: 0.5659 },
-          { address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", score: 0.5411 },
-          { address: "0x3333333333333333333333333333333333333333", score: 0.5160 },
-          { address: "0xdddddddddddddddddddddddddddddddddddddddd", score: 0.4268 },
-          { address: "0x7777777777777777777777777777777777777777", score: 0.3721 },
-        ];
+        // Fallback to mock data when API is unreachable
+        setLeaderboard(mockLeaderboard);
+        setGraphData(mockGraphData);
+        setLoading(false);
+        return;
       }
-      
+
       setLeaderboard(agents);
-      
-      // Mock graph data based on leaderboard
-      // In a real app, we'd fetch the full graph structure
+
+      // Build graph data from API response
       const nodes = agents.map((a: any) => ({
         id: a.address,
         val: a.score,
@@ -61,45 +58,17 @@ export default function Home() {
       // Add Dignitas Oracle Node
       nodes.push({
         id: 'Dignitas Oracle',
-        val: 1.0, // Max trust
-        group: 0 // Special group
+        val: 1.0,
+        group: 0
       });
 
-      // Create mock links: Payment implies Feedback
-      const links = [];
-      
-      // Oracle interactions (Oracle rates random agents)
-      nodes.forEach((node: any) => {
-        if (node.id !== 'Dignitas Oracle' && Math.random() > 0.6) {
-           links.push({
-             source: 'Dignitas Oracle',
-             target: node.id,
-             type: Math.random() > 0.6 ? 'feedback' : 'negative_feedback' // 40% negative from Oracle
-           });
-        }
-      });
-
-      for (let i = 0; i < nodes.length - 1; i++) { // -1 to exclude Oracle from loop
-        if (nodes[i].id === 'Dignitas Oracle') continue;
-        
-        for (let j = i + 1; j < nodes.length - 1; j++) {
-          if (nodes[j].id === 'Dignitas Oracle') continue;
-
-          // Randomly decide if there's an interaction
-          if (Math.random() > 0.7) {
-            // Interaction implies feedback (positive or negative)
-            links.push({
-              source: nodes[i].id,
-              target: nodes[j].id,
-              type: Math.random() > 0.7 ? 'feedback' : 'negative_feedback' // 30% negative from agents
-            });
-          }
-        }
-      }
-
-      setGraphData({ nodes, links });
+      // Use mock links structure for consistency
+      setGraphData({ nodes, links: mockGraphData.links });
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Fallback to mock data on any error
+      setLeaderboard(mockLeaderboard);
+      setGraphData(mockGraphData);
     } finally {
       setLoading(false);
     }
