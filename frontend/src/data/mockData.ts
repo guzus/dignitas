@@ -131,6 +131,31 @@ export const mockAgents: Agent[] = [
   }
 ];
 
+// Travel planning agents (separate category for demo)
+export const travelAgents: Agent[] = [
+  {
+    address: "0xT111111111111111111111111111111111111111",
+    score: 0.9245,
+    name: "VoyageAI",
+    description: "AI-powered itinerary planning with real-time flight and hotel optimization",
+    capabilities: ["travel", "planning", "flights", "hotels", "itinerary"]
+  },
+  {
+    address: "0xT222222222222222222222222222222222222222",
+    score: 0.8732,
+    name: "TripMaster Pro",
+    description: "End-to-end travel coordination with budget optimization",
+    capabilities: ["travel", "planning", "budget", "booking", "coordination"]
+  },
+  {
+    address: "0xT333333333333333333333333333333333333333",
+    score: 0.7891,
+    name: "WanderBot",
+    description: "Personalized travel recommendations based on preferences and reviews",
+    capabilities: ["travel", "planning", "recommendations", "reviews", "personalization"]
+  }
+];
+
 // Convert agents to leaderboard format
 export const mockLeaderboard = mockAgents.map(a => ({
   address: a.address,
@@ -241,4 +266,5 @@ export const mockDiscoveryResults = {
   bridge: [
     mockAgents[4], // BridgeBot
   ],
+  travel: travelAgents, // Travel planning agents sorted by score desc
 };

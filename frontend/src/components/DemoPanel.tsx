@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import { Search, DollarSign, CheckCircle, ArrowRight, Loader2, BrainCircuit, MessageSquare, Zap } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { travelAgents, mockAgents, Agent } from '@/data/mockData';
 
 const DemoPanel = () => {
   const [step, setStep] = useState(1);
@@ -25,12 +23,12 @@ const DemoPanel = () => {
     if (!query) return;
     setLoading(true);
     addLog('Initiating x402 payment for discovery...');
-    
+
     try {
       // 1. Simulate Payment
       await new Promise(r => setTimeout(r, 1000));
       addLog('Payment confirmed: $0.001 (USDC)');
-      
+
       // 2. Simulate LLM Routing
       setRoutingStatus("Analyzing intent...");
       await new Promise(r => setTimeout(r, 800));
@@ -38,30 +36,37 @@ const DemoPanel = () => {
       await new Promise(r => setTimeout(r, 800));
       setRoutingStatus("Filtering by reputation...");
       await new Promise(r => setTimeout(r, 800));
-      
-      // 3. Fetch Agents (Mocking capability matching based on query)
-      let agents;
-      try {
-        const { data } = await axios.get(`${API_URL}/leaderboard`, { timeout: 2000 });
-        agents = data.agents;
-      } catch {
-        // Fallback to pre-calculated PageRank scores
-        agents = [
-          { address: "0x2222222222222222222222222222222222222222", score: 1.0000 },
-          { address: "0xffffffffffffffffffffffffffffffffffffffff", score: 0.8931 },
-          { address: "0x4444444444444444444444444444444444444444", score: 0.8863 },
-        ];
+
+      // 3. Match agents based on query keywords
+      const queryLower = query.toLowerCase();
+      let matchedAgents: Agent[];
+
+      // Check for travel-related queries
+      if (queryLower.includes('travel') || queryLower.includes('trip') || queryLower.includes('vacation') || queryLower.includes('flight') || queryLower.includes('hotel')) {
+        // Return travel agents sorted by score descending
+        matchedAgents = [...travelAgents].sort((a, b) => b.score - a.score);
+        addLog('Detected intent: Travel Planning');
+      } else if (queryLower.includes('defi') || queryLower.includes('yield') || queryLower.includes('trading')) {
+        matchedAgents = mockAgents.filter(a => a.capabilities.some(c => ['defi', 'trading', 'yield'].includes(c))).slice(0, 3);
+        addLog('Detected intent: DeFi Services');
+      } else if (queryLower.includes('security') || queryLower.includes('audit')) {
+        matchedAgents = mockAgents.filter(a => a.capabilities.some(c => ['audit', 'security'].includes(c))).slice(0, 3);
+        addLog('Detected intent: Security Services');
+      } else {
+        // Default to top 3 agents by score
+        matchedAgents = [...mockAgents].sort((a, b) => b.score - a.score).slice(0, 3);
+        addLog('Using top-ranked agents');
       }
 
-      // Tag agents with capabilities for the demo
-      const mockAgents = agents.slice(0, 3).map((a: any, i: number) => ({
+      // Format agents for display with match scores
+      const formattedAgents = matchedAgents.map((a, i) => ({
         ...a,
-        capability: i === 0 ? "DeFi Trading" : i === 1 ? "Data Analysis" : "Content Gen",
-        matchScore: 90 - (i * 10)
+        capability: a.capabilities[0]?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General',
+        matchScore: 95 - (i * 5)
       }));
 
-      setResults(mockAgents);
-      addLog(`LLM Router found ${mockAgents.length} agents matching "${query}"`);
+      setResults(formattedAgents);
+      addLog(`LLM Router found ${formattedAgents.length} agents matching "${query}"`);
       setStep(2);
     } catch (e: any) {
       addLog('Error: ' + e.message);
@@ -72,13 +77,13 @@ const DemoPanel = () => {
 
   const handleSelect = (agent: any) => {
     setSelectedAgent(agent);
-    addLog(`Selected agent: ${agent.address.slice(0, 8)}...`);
+    addLog(`Selected agent: ${agent.name}`);
     setStep(3);
   };
 
   const handleTransact = async () => {
     setLoading(true);
-    addLog(`Sending x402 payment to ${selectedAgent.address.slice(0, 8)}...`);
+    addLog(`Sending x402 payment to ${selectedAgent.name}...`);
     await new Promise(r => setTimeout(r, 2000));
     addLog('Transaction successful!');
     addLog('Recording feedback on-chain...');
@@ -242,7 +247,7 @@ const DemoPanel = () => {
               
               <div className="space-y-3">
                 {results.map((agent, i) => (
-                  <motion.div 
+                  <motion.div
                     key={agent.address}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -252,14 +257,17 @@ const DemoPanel = () => {
                   >
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center text-lg font-bold text-slate-500 group-hover:text-orange-500 transition-colors">
-                        {agent.address.slice(2, 4)}
+                        {i + 1}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm text-slate-200">{agent.address.slice(0, 8)}...</span>
+                          <span className="font-semibold text-sm text-slate-200">{agent.name}</span>
                           <Badge variant="secondary" className="text-[10px] h-5 bg-slate-800 text-slate-400">
                             {agent.capability}
                           </Badge>
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5 max-w-[280px] truncate">
+                          {agent.description}
                         </div>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-xs text-emerald-400 font-medium">
@@ -295,7 +303,7 @@ const DemoPanel = () => {
               <div className="space-y-2">
                 <h3 className="font-semibold text-xl text-white">Execute Transaction</h3>
                 <p className="text-sm text-slate-400 max-w-xs mx-auto">
-                  Pay <span className="font-mono text-orange-400">{selectedAgent.address.slice(0, 8)}...</span> to perform the task.
+                  Pay <span className="font-semibold text-orange-400">{selectedAgent.name}</span> to perform the task.
                 </p>
               </div>
 
