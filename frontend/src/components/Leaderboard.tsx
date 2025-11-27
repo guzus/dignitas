@@ -8,43 +8,94 @@ interface Agent {
   score: number;
 }
 
-const Leaderboard = ({ data }: { data: Agent[] }) => {
+const Leaderboard = ({ 
+  agents, 
+  selectedAgent, 
+  onSelectAgent 
+}: { 
+  agents: any[], 
+  selectedAgent: string | null, 
+  onSelectAgent: (id: string | null) => void 
+}) => {
+  // Mock metadata for demo purposes
+  const getAgentMetadata = (address: string, index: number) => {
+    const names = [
+      "AlphaVault", "DataOracle X", "SentimentAI", "YieldOptimizer", 
+      "BridgeBot", "NFT Scout", "GovDelegate", "AuditLayer"
+    ];
+    const descs = [
+      "High-frequency DeFi trading strategies",
+      "Real-time cross-chain data feeds",
+      "Social sentiment analysis engine",
+      "Auto-compounding yield farmer",
+      "Secure cross-L2 bridging service",
+      "Rare NFT sniper and valuation",
+      "DAO governance voting automation",
+      "Smart contract security auditor"
+    ];
+    return {
+      name: names[index] || `Agent ${address.slice(2, 6)}`,
+      desc: descs[index] || "Autonomous agent service"
+    };
+  };
+
   return (
-    <Card className="h-full border-slate-800 bg-slate-950/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Trophy className="h-5 w-5 text-yellow-500" />
-          Top Agents
-        </CardTitle>
+    <Card className="h-full border-slate-800 bg-slate-950/50 flex flex-col">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            Top Agents
+          </CardTitle>
+          <Badge variant="outline" className="border-slate-700">Live Ranking</Badge>
+        </div>
       </CardHeader>
-      <CardContent className="px-0">
-        <div className="flex flex-col">
-          {data.map((agent, index) => (
-            <div 
-              key={agent.address} 
-              className="flex items-center justify-between px-6 py-3 hover:bg-slate-900/50 transition-colors border-b border-slate-800/50 last:border-0"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`
-                  w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold
-                  ${index < 3 ? 'bg-orange-500/20 text-orange-500' : 'bg-slate-800 text-slate-400'}
-                `}>
-                  {index + 1}
+      <CardContent className="flex-1 overflow-y-auto pr-2">
+        <div className="space-y-3">
+          {agents.map((agent, i) => {
+            const meta = getAgentMetadata(agent.address, i);
+            const isSelected = selectedAgent === agent.address;
+            
+            return (
+              <div 
+                key={agent.address} 
+                onClick={() => onSelectAgent(isSelected ? null : agent.address)}
+                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200 group
+                  ${isSelected 
+                    ? 'bg-slate-800 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
+                    : 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm transition-transform duration-200 ${isSelected ? 'scale-110' : ''}
+                    ${i === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 
+                      i === 1 ? 'bg-slate-400/20 text-slate-400 border border-slate-400/30' :
+                      i === 2 ? 'bg-orange-700/20 text-orange-700 border border-orange-700/30' :
+                      'bg-slate-800 text-slate-500'
+                    }`}>
+                    {i + 1}
+                  </div>
+                  <div>
+                    <div className={`font-medium text-sm flex items-center gap-2 ${isSelected ? 'text-emerald-400' : 'text-slate-200'}`}>
+                      {meta.name}
+                      <span className={`text-[10px] font-mono font-normal ${isSelected ? 'text-emerald-500/70' : 'text-slate-500'}`}>
+                        {agent.address.slice(0, 6)}...{agent.address.slice(-4)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 truncate max-w-[180px]">
+                      {meta.desc}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-mono text-sm text-slate-200">
-                    {agent.address.slice(0, 6)}...{agent.address.slice(-4)}
-                  </span>
+                <div className="text-right">
+                  <div className={`font-bold font-mono text-sm ${isSelected ? 'text-emerald-400' : 'text-emerald-400/80'}`}>
+                    {(agent.score * 100).toFixed(1)}
+                  </div>
+                  <div className="text-[10px] text-slate-600 uppercase tracking-wider">Trust</div>
                 </div>
               </div>
-              
-              <div className="text-right">
-                <Badge variant="outline" className="font-mono border-emerald-500/20 text-emerald-500 bg-emerald-500/10">
-                  {(agent.score * 100).toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

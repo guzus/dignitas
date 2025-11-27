@@ -16,6 +16,8 @@ export default function Home() {
   const [graphData, setGraphData] = useState<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(true);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -23,37 +25,67 @@ export default function Home() {
       setLeaderboard(data.agents);
       
       // Mock graph data based on leaderboard
+      // In a real app, we'd fetch the full graph structure
       const nodes = data.agents.map((a: any) => ({
         id: a.address,
         val: a.score,
         group: a.score > 0.8 ? 1 : a.score > 0.5 ? 2 : 3
       }));
+
+      // Add Dignitas Oracle Node
+      nodes.push({
+        id: 'Dignitas Oracle',
+        val: 1.0, // Max trust
+        group: 0 // Special group
+      });
+
+      // Create mock links: Payment implies Feedback
+      const links = [];
       
-      const links: any[] = [];
-      nodes.forEach((node: any, i: number) => {
-        const targetIndex = Math.floor(Math.random() * nodes.length);
-        if (i !== targetIndex) {
-          links.push({
-            source: node.id,
-            target: nodes[targetIndex].id,
-            type: Math.random() > 0.7 ? 'x402' : 'feedback'
-          });
+      // Oracle interactions (Oracle rates random agents)
+      nodes.forEach((node: any) => {
+        if (node.id !== 'Dignitas Oracle' && Math.random() > 0.6) {
+           links.push({
+             source: 'Dignitas Oracle',
+             target: node.id,
+             type: Math.random() > 0.6 ? 'feedback' : 'negative_feedback' // 40% negative from Oracle
+           });
         }
       });
-      
+
+      for (let i = 0; i < nodes.length - 1; i++) { // -1 to exclude Oracle from loop
+        if (nodes[i].id === 'Dignitas Oracle') continue;
+        
+        for (let j = i + 1; j < nodes.length - 1; j++) {
+          if (nodes[j].id === 'Dignitas Oracle') continue;
+
+          // Randomly decide if there's an interaction
+          if (Math.random() > 0.7) {
+            // Interaction implies feedback (positive or negative)
+            links.push({
+              source: nodes[i].id,
+              target: nodes[j].id,
+              type: Math.random() > 0.7 ? 'feedback' : 'negative_feedback' // 30% negative from agents
+            });
+          }
+        }
+      }
+
       setGraphData({ nodes, links });
-      setLoading(false);
     } catch (error) {
-      console.error("Failed to fetch data", error);
+      console.error('Error fetching data:', error);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!isPaused) {
+      const interval = setInterval(fetchData, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isPaused]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -97,7 +129,13 @@ export default function Home() {
               </div>
 
               <TabsContent value="graph" className="flex-1 mt-0 h-full">
-                <TrustGraph data={graphData} />
+                <TrustGraph 
+                  data={graphData} 
+                  isPaused={isPaused} 
+                  onTogglePause={() => setIsPaused(!isPaused)}
+                  selectedAgent={selectedAgent}
+                  onSelectAgent={setSelectedAgent}
+                />
               </TabsContent>
 
               <TabsContent value="demo" className="flex-1 mt-0 h-full">
@@ -135,10 +173,18 @@ export default function Home() {
                         <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
                           <div className="font-mono text-sm text-primary mb-1">W</div>
                           <div className="text-sm font-medium">Edge Weight</div>
-                          <div className="text-xs text-muted-foreground">
-                            <span className="text-orange-500">x402 (2.0)</span> vs 
-                            <span className="text-blue-500 ml-1">Feedback (1.2)</span>
+                          <div className="text-xs text-muted-foreground mb-1">
+                            <span className="text-emerald-500">Positive (1.2)</span> vs 
+                            <span className="text-red-500 ml-1">Negative (-1.0)</span>
                           </div>
+                          <div className="text-sm font-medium text-slate-400 italic border-t border-slate-800 pt-2 mt-2">
+                            *Decays over time (half-life: 30 days)
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
+                          <div className="font-mono text-sm text-primary mb-1">C</div>
+                          <div className="text-sm font-medium">Outbound Links</div>
+                          <div className="text-xs text-muted-foreground">Normalizes vote weight</div>
                         </div>
                       </div>
                     </div>
@@ -168,7 +214,11 @@ export default function Home() {
             </div>
             
             <div className="flex-1 overflow-hidden min-h-[400px]">
-              <Leaderboard data={leaderboard} />
+              <Leaderboard 
+                agents={leaderboard} 
+                selectedAgent={selectedAgent}
+                onSelectAgent={setSelectedAgent}
+              />
             </div>
           </div>
 

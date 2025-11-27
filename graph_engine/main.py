@@ -33,6 +33,13 @@ def seed_demo_data():
         "0x6666666666666666666666666666666666666666",  # Low
         "0x7777777777777777777777777777777777777777",  # New
         "0x8888888888888888888888888888888888888888",  # New
+        "0x9999999999999999999999999999999999999999",  # Sybil
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",  # Sybil
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",  # Sybil
+        "0xcccccccccccccccccccccccccccccccccccccccc",  # Sybil
+        "0xdddddddddddddddddddddddddddddddddddddddd",  # Sybil
+        "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",  # Sybil
+        "0xffffffffffffffffffffffffffffffffffffffff",  # Sybil
     ]
     
     # Simulate realistic interaction patterns
@@ -52,8 +59,22 @@ def seed_demo_data():
         # Cross-endorsements between top agents
         (agents[0], agents[1], "x402"),
         (agents[1], agents[0], "x402"),
+        # Negative feedback (Sybil attack attempt)
+        (agents[0], agents[8], "negative_feedback"),
+        (agents[1], agents[9], "negative_feedback"),
+        # Sybil cluster (interacting with each other but isolated)
+        (agents[8], agents[9], "x402"),
+        (agents[9], agents[10], "x402"),
+        (agents[10], agents[8], "x402"),
     ]
     
+    # Generate more random interactions
+    for _ in range(150):
+        src = random.choice(agents) 
+        dst = random.choice(agents)
+        if src != dst:
+            interactions.append((src, dst, random.choice(["x402", "feedback"])))
+
     for from_a, to_a, itype in interactions:
         days_ago = random.randint(1, 25)
         ts = datetime.utcnow() - timedelta(days=days_ago)

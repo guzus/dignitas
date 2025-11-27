@@ -9,6 +9,7 @@ class DignitasPageRank:
     HALF_LIFE_DAYS = 30
     WEIGHT_X402 = 2.0
     WEIGHT_FEEDBACK = 1.2
+    WEIGHT_NEGATIVE = 0.01  # Minimal weight, acts as a "dampener" or lack of trust
     
     def __init__(self):
         self.graph = nx.DiGraph()
@@ -31,7 +32,13 @@ class DignitasPageRank:
     
     def _calc_weight(self, interaction_type: str, timestamp: datetime) -> float:
         """Calculate weight with time decay."""
-        base = self.WEIGHT_X402 if interaction_type == 'x402' else self.WEIGHT_FEEDBACK
+        if interaction_type == 'negative_feedback':
+            base = self.WEIGHT_NEGATIVE
+        elif interaction_type == 'x402':
+            base = self.WEIGHT_X402
+        else:
+            base = self.WEIGHT_FEEDBACK
+            
         days_ago = (datetime.utcnow() - timestamp).days
         decay = 0.5 ** (days_ago / self.HALF_LIFE_DAYS)
         return base * decay

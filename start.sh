@@ -3,17 +3,26 @@
 
 echo "🚀 Starting Dignitas..."
 
+# Check for uv and pnpm
+if ! command -v uv &> /dev/null; then
+    echo "❌ uv is not installed. Please install it: curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
+fi
+
+if ! command -v pnpm &> /dev/null; then
+    echo "❌ pnpm is not installed. Please install it: npm install -g pnpm"
+    exit 1
+fi
+
 # Start Graph Engine
 echo "Starting Graph Engine on :8000..."
 cd graph_engine
-# Check if venv exists, if not create it
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-else
-    source venv/bin/activate
+# Create venv with uv if not exists
+if [ ! -d ".venv" ]; then
+    uv venv
 fi
+source .venv/bin/activate
+uv pip install -r requirements.txt
 
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 GRAPH_PID=$!
@@ -25,9 +34,9 @@ sleep 2
 echo "Starting API Gateway on :3000..."
 cd api
 if [ ! -d "node_modules" ]; then
-    npm install
+    pnpm install
 fi
-npm run dev &
+pnpm run dev &
 API_PID=$!
 cd ..
 
@@ -37,12 +46,10 @@ sleep 2
 echo "Starting Frontend on :3001..."
 cd frontend
 if [ ! -d "node_modules" ]; then
-    npm install
+    pnpm install
 fi
 # Next.js usually runs on 3000, but our API is on 3000.
-# We need to run Next.js on a different port, e.g., 3001 or 5173.
-# Let's use 3001.
-npm run dev -- -p 3001 &
+pnpm run dev -p 3001 &
 FRONTEND_PID=$!
 cd ..
 
