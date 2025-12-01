@@ -12,7 +12,7 @@ const api = axios.create({
 
 const graphApi = axios.create({
   baseURL: GRAPH_ENGINE_URL,
-  timeout: 5000,
+  timeout: 30000, // LLM-based endpoints need more time
 });
 
 export interface AgentResponse {

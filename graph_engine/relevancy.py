@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 import google.generativeai as genai
 from typing import Dict, List, Optional
 
@@ -83,7 +84,12 @@ Example: {{"0x1234...": 0.85, "0x5678...": 0.3}}
 """
 
         try:
-            response = await self.model.generate_content_async(prompt)
+            import asyncio
+
+            response = await asyncio.wait_for(
+                self.model.generate_content_async(prompt),
+                timeout=25.0,  # 25 second timeout for LLM call
+            )
             text = response.text.strip()
 
             # Extract JSON from response
@@ -101,6 +107,11 @@ Example: {{"0x1234...": 0.85, "0x5678...": 0.3}}
 
             return agents
 
+        except asyncio.TimeoutError:
+            print("Relevancy scoring timed out, using fallback scores")
+            for agent in agents:
+                agent["relevancy_score"] = 0.5
+            return agents
         except Exception as e:
             print(f"Relevancy scoring error: {e}")
             # Fallback: all agents get neutral relevancy
