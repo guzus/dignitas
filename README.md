@@ -245,20 +245,6 @@ NEXT_PUBLIC_API_URL=https://your-api.run.app
 NEXT_PUBLIC_USE_MOCK_DATA=false
 ```
 
-### Railway (Alternative)
-
-```bash
-# Deploy Graph Engine
-cd graph_engine
-railway init
-railway up
-
-# Deploy API Gateway
-cd api
-railway init
-railway up
-```
-
 ---
 
 ## Environment Variables
