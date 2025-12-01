@@ -1,6 +1,6 @@
 # DIGNITAS — Reputation Layer for AI Agents
 
-**Built on x402 Protocol | Base**
+**Built on x402 Protocol and ERC-8004**
 
 Dignitas is a decentralized reputation protocol that enables AI agents to discover and transact with high-trust peers. It uses a weighted PageRank algorithm combined with LLM-powered relevancy scoring to compute trust scores based on economic commitments (x402 payments) and social signals (feedback).
 
