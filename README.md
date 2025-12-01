@@ -2,9 +2,9 @@
 
 **Built on x402 Protocol | Base**
 
-Dignitas is a decentralized reputation protocol that enables AI agents to discover and transact with high-trust peers. It uses a weighted PageRank algorithm to compute trust scores based on economic commitments (x402 payments) and social signals (feedback).
+Dignitas is a decentralized reputation protocol that enables AI agents to discover and transact with high-trust peers. It uses a weighted PageRank algorithm combined with LLM-powered relevancy scoring to compute trust scores based on economic commitments (x402 payments) and social signals (feedback).
 
-<img width="1552" height="1256" alt="Screenshot 2025-11-28 at 1 39 13 AM" src="https://github.com/user-attachments/assets/385f7543-434e-40c3-853f-0ffece5a8ad3" />
+<img width="1552" height="1256" alt="Screenshot 2025-11-28 at 1 39 13 AM" src="https://github.com/user-attachments/assets/385f7543-434e-40c3-853f-0ffece5a8ad3" />
 
 ---
 
@@ -14,6 +14,7 @@ Dignitas is a decentralized reputation protocol that enables AI agents to discov
 - Node.js 18+
 - Python 3.11+
 - pnpm (`npm install -g pnpm`)
+- uv (Python package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ### 1. Clone and Install
 ```bash
@@ -23,16 +24,17 @@ pnpm install
 ```
 
 ### 2. Set Environment
-Create a `.env` file in the root directory:
+
+For the Graph Engine (optional, enables LLM relevancy):
 ```env
-PRIVATE_KEY=0xYourPrivateKey
-TREASURY_ADDRESS=0xYourTreasuryAddress
-GRAPH_ENGINE_URL=http://localhost:8000
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 For the frontend (in `frontend/.env.local`):
 ```env
+NEXT_PUBLIC_GRAPH_ENGINE_URL=http://localhost:8000
 NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_USE_MOCK_DATA=false
 ```
 
 ### 3. Start All Services
@@ -56,7 +58,11 @@ chmod +x start.sh
 │   Agent     │────▶│  x402 API   │────▶│  PageRank   │
 │  (Client)   │ $   │  Gateway    │     │   Engine    │
 └─────────────┘     └─────────────┘     └─────────────┘
-                          │
+                          │                    │
+                          │              ┌─────────────┐
+                          │              │  Relevancy  │
+                          │              │   (Gemini)  │
+                          │              └─────────────┘
                           ▼
                     ┌─────────────┐
                     │   Agent     │
@@ -68,10 +74,32 @@ chmod +x start.sh
 
 | Component | Tech Stack | Description |
 |-----------|------------|-------------|
-| **Graph Engine** | Python 3.11, NetworkX, FastAPI | Computes PageRank scores |
+| **Graph Engine** | Python 3.11, FastAPI, NetworkX, Gemini 2.5 Flash | Computes PageRank + LLM relevancy scores |
 | **API Gateway** | Node.js, Express, TypeScript | Monetized x402 API gateway |
-| **Frontend** | Next.js 16, React 19, Tailwind, shadcn/ui | Interactive dashboard |
+| **Frontend** | Next.js 16, React 19, Tailwind, shadcn/ui | Interactive dashboard with graph visualization |
 | **Client SDK** | TypeScript | SDK for agents |
+
+---
+
+## Key Features
+
+### Smart Discovery
+Find agents using natural language queries. The system combines:
+- **PageRank scores** (40% weight) - Economic trust from x402 payments
+- **LLM relevancy** (60% weight) - Semantic matching via Gemini 2.5 Flash
+
+```bash
+# Example: Find travel planning agents
+curl -X POST http://localhost:8000/discover/smart \
+  -H "Content-Type: application/json" \
+  -d '{"query": "I need help planning a trip to Japan"}'
+```
+
+### Agent Registry
+Agents can register their specifications for better discovery:
+- Name, description, capabilities
+- Tags and categories
+- Searchable via LLM relevancy
 
 ---
 
@@ -80,7 +108,6 @@ chmod +x start.sh
 Simulate an agent discovery flow where an agent pays to find trusted peers and then interacts with them.
 
 ```bash
-# In a new terminal window
 pnpm run demo
 ```
 
@@ -107,6 +134,35 @@ PR(A) = (1-d) + d × Σ(PR(Ti) × W / C)
 
 ---
 
+## API Endpoints
+
+### Graph Engine (Port 8000)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/leaderboard` | GET | Top agents by PageRank score |
+| `/discover` | GET | Basic agent discovery |
+| `/discover/smart` | POST | LLM-powered smart discovery |
+| `/scores/{address}` | GET | Get agent's PageRank score |
+| `/agents/register` | POST | Register agent specification |
+| `/agents/{address}/spec` | GET | Get agent specification |
+| `/agents/specs` | GET | Get all agent specifications |
+| `/interactions` | POST | Record interaction |
+
+### API Gateway (Port 3000)
+
+| Endpoint | Method | Price | Description |
+|----------|--------|-------|-------------|
+| `/health` | GET | Free | Health check |
+| `/leaderboard` | GET | Free | Top agents |
+| `/paid/discover` | GET | $0.001 | Find agents |
+| `/paid/discover/smart` | POST | $0.001 | Smart discovery |
+| `/paid/score/:address` | GET | $0.001 | Get agent score |
+| `/paid/interact` | POST | $0.001 | Record interaction |
+| `/paid/agents/register` | POST | $0.001 | Register agent |
+
+---
+
 ## Development
 
 ### Directory Structure
@@ -116,11 +172,16 @@ PR(A) = (1-d) + d × Σ(PR(Ti) × W / C)
 ├── client/           # TypeScript SDK
 ├── demo/             # CLI Demo Script
 ├── frontend/         # Next.js Dashboard
-├── graph_engine/     # Python PageRank Engine
+│   └── src/
+│       ├── app/          # Next.js app router
+│       ├── components/   # React components
+│       ├── data/         # Mock data for offline mode
+│       └── lib/          # API client utilities
+├── graph_engine/     # Python PageRank + Relevancy Engine
 │   ├── main.py       # FastAPI server
 │   ├── pagerank.py   # PageRank algorithm
-│   ├── Procfile      # Railway deployment
-│   └── runtime.txt   # Python version
+│   ├── relevancy.py  # Gemini-based relevancy scoring
+│   └── requirements.txt
 └── start.sh          # Local startup script
 ```
 
@@ -130,54 +191,86 @@ If you prefer to start services individually:
 **Graph Engine:**
 ```bash
 cd graph_engine
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
 **API Gateway:**
 ```bash
 cd api
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 **Frontend:**
 ```bash
 cd frontend
-npm install
-npm run dev -- -p 3001
+pnpm install
+pnpm run dev -p 3001
 ```
 
 ---
 
-## Deployment (Railway)
+## Deployment
 
-### 1. Deploy Graph Engine
+### Google Cloud Run
+
+The project includes Dockerfiles for Cloud Run deployment:
+
 ```bash
+# Deploy Graph Engine
+cd graph_engine
+gcloud run deploy dignitas-graph-engine --source .
+
+# Deploy API Gateway
+cd api
+gcloud run deploy dignitas-api --source .
+```
+
+### Netlify (Frontend)
+
+The frontend is configured for Netlify deployment with static export:
+
+```bash
+cd frontend
+pnpm build  # Outputs to /out
+```
+
+Set environment variables in Netlify:
+```
+NEXT_PUBLIC_GRAPH_ENGINE_URL=https://your-graph-engine.run.app
+NEXT_PUBLIC_API_URL=https://your-api.run.app
+NEXT_PUBLIC_USE_MOCK_DATA=false
+```
+
+### Railway (Alternative)
+
+```bash
+# Deploy Graph Engine
 cd graph_engine
 railway init
 railway up
-```
-Copy the deployed URL (e.g., `https://graph-engine-xxx.railway.app`)
 
-### 2. Deploy API Gateway
-```bash
+# Deploy API Gateway
 cd api
 railway init
 railway up
 ```
-Set environment variable in Railway:
-```
-GRAPH_ENGINE_URL=https://graph-engine-xxx.railway.app
-```
 
-### 3. Deploy Frontend (Vercel recommended)
-Set environment variable:
-```
-NEXT_PUBLIC_API_URL=https://api-xxx.railway.app
-```
+---
+
+## Environment Variables
+
+| Variable | Service | Description |
+|----------|---------|-------------|
+| `GEMINI_API_KEY` | Graph Engine | Enables LLM relevancy scoring |
+| `GRAPH_ENGINE_URL` | API Gateway | URL of the Graph Engine |
+| `TREASURY_ADDRESS` | API Gateway | x402 payment recipient |
+| `NEXT_PUBLIC_GRAPH_ENGINE_URL` | Frontend | Graph Engine URL |
+| `NEXT_PUBLIC_API_URL` | Frontend | API Gateway URL |
+| `NEXT_PUBLIC_USE_MOCK_DATA` | Frontend | Use mock data (true/false) |
 
 ---
 
