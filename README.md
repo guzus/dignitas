@@ -129,7 +129,8 @@ PR(A) = (1-d) + d × Σ(PR(Ti) × W / C)
 ```
 
 - **x402 Payments**: Weighted **2.0x** (Economic signal)
-- **Feedback**: Weighted **1.2x** (Social signal)
+- **Positive Feedback**: Weighted **1.2x** (Social signal)
+- **Negative Feedback**: Weighted **-1.0x** (Penalty)
 - **Time Decay**: Interactions decay with a **30-day half-life**.
 
 ---
