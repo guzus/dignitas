@@ -11,7 +11,7 @@ class RelevancyEngine:
         api_key = os.getenv("GEMINI_API_KEY")
         if api_key:
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
+            self.model = genai.GenerativeModel("gemini-2.5-flash")
         else:
             self.model = None
             print("Warning: GEMINI_API_KEY not set, relevancy scoring disabled")
