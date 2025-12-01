@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Shield, Network, Activity, Zap, Info } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import TrustGraph from '@/components/TrustGraph';
 import Leaderboard from '@/components/Leaderboard';
 import DemoPanel from '@/components/DemoPanel';
+import { fetchLeaderboard, fetchGraphData } from '@/lib/api';
 import { mockLeaderboard, mockGraphData } from '@/data/mockData';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 // Set to true for standalone frontend deployment (no backend required)
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
@@ -33,37 +32,14 @@ export default function Home() {
         return;
       }
 
-      let agents = [];
-      try {
-        const { data } = await axios.get(`${API_URL}/leaderboard`, { timeout: 2000 });
-        agents = data.agents;
-      } catch (e) {
-        console.log("API unreachable, using pre-calculated mock data");
-        // Fallback to mock data when API is unreachable
-        setLeaderboard(mockLeaderboard);
-        setGraphData(mockGraphData);
-        setLoading(false);
-        return;
-      }
+      // Fetch from API with automatic fallback to mock data
+      const [agents, graph] = await Promise.all([
+        fetchLeaderboard(),
+        fetchGraphData()
+      ]);
 
       setLeaderboard(agents);
-
-      // Build graph data from API response
-      const nodes = agents.map((a: any) => ({
-        id: a.address,
-        val: a.score,
-        group: a.score > 0.8 ? 1 : a.score > 0.5 ? 2 : 3
-      }));
-
-      // Add Dignitas Oracle Node
-      nodes.push({
-        id: 'Dignitas Oracle',
-        val: 1.0,
-        group: 0
-      });
-
-      // Use mock links structure for consistency
-      setGraphData({ nodes, links: mockGraphData.links });
+      setGraphData(graph);
     } catch (error) {
       console.error('Error fetching data:', error);
       // Fallback to mock data on any error

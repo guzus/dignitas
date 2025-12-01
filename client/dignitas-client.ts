@@ -68,4 +68,60 @@ export class DignitasClient {
       interaction_type: type
     });
   }
+
+  // PAID: Smart discovery with LLM relevancy
+  async smartDiscover(
+    query: string,
+    options: {
+      minScore?: number;
+      limit?: number;
+      pagerankWeight?: number;
+      relevancyWeight?: number;
+    } = {}
+  ): Promise<{
+    agents: Array<{
+      address: string;
+      pagerank_score: number;
+      relevancy_score: number;
+      combined_score: number;
+      name?: string;
+      description?: string;
+      category?: string;
+    }>;
+    query: string;
+    weights: { pagerank: number; relevancy: number };
+  }> {
+    const { data } = await this.client.post('/paid/discover/smart', {
+      query,
+      min_score: options.minScore ?? 0,
+      limit: options.limit ?? 10,
+      pagerank_weight: options.pagerankWeight ?? 0.4,
+      relevancy_weight: options.relevancyWeight ?? 0.6
+    });
+    return data;
+  }
+
+  // PAID: Register agent specification
+  async registerAgent(spec: {
+    address: string;
+    name: string;
+    description?: string;
+    capabilities?: string[];
+    tags?: string[];
+    category?: string;
+  }): Promise<void> {
+    await this.client.post('/paid/agents/register', spec);
+  }
+
+  // PAID: Get agent specification
+  async getAgentSpec(address: string): Promise<{
+    name: string;
+    description: string;
+    capabilities: string[];
+    tags: string[];
+    category: string;
+  }> {
+    const { data } = await this.client.get(`/paid/agents/${address}/spec`);
+    return data.spec;
+  }
 }

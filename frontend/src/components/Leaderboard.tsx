@@ -2,11 +2,15 @@ import React from 'react';
 import { Trophy } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getAgentByAddress } from '@/data/mockData';
 
-interface Agent {
+interface AgentData {
   address: string;
   score: number;
+  name?: string;
+  description?: string;
+  capabilities?: string[];
+  tags?: string[];
+  category?: string;
 }
 
 const Leaderboard = ({
@@ -14,22 +18,15 @@ const Leaderboard = ({
   selectedAgent,
   onSelectAgent
 }: {
-  agents: any[],
+  agents: AgentData[],
   selectedAgent: string | null,
   onSelectAgent: (id: string | null) => void
 }) => {
-  // Get agent metadata from mock data
-  const getAgentMetadata = (address: string, index: number) => {
-    const agent = getAgentByAddress(address);
-    if (agent) {
-      return {
-        name: agent.name,
-        desc: agent.description
-      };
-    }
+  // Get agent metadata - now comes directly from API response
+  const getAgentMetadata = (agent: AgentData) => {
     return {
-      name: `Agent ${address.slice(2, 6)}`,
-      desc: "Autonomous agent service"
+      name: agent.name || `Agent ${agent.address.slice(2, 6)}`,
+      desc: agent.description || "Autonomous agent service"
     };
   };
 
@@ -47,7 +44,7 @@ const Leaderboard = ({
       <CardContent className="flex-1 overflow-y-auto pr-2">
         <div className="space-y-3">
           {agents.map((agent, i) => {
-            const meta = getAgentMetadata(agent.address, i);
+            const meta = getAgentMetadata(agent);
             const isSelected = selectedAgent === agent.address;
             
             return (

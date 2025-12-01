@@ -111,6 +111,89 @@ app.post('/paid/interact', async (req: Request, res: Response) => {
   }
 });
 
+// Smart discovery - find agents by query with LLM relevancy + PageRank
+app.post('/paid/discover/smart', async (req: Request, res: Response) => {
+  const {
+    query,
+    min_score = 0,
+    limit = 10,
+    pagerank_weight = 0.4,
+    relevancy_weight = 0.6
+  } = req.body;
+
+  if (!query) {
+    res.status(400).json({ error: 'Query is required' });
+    return;
+  }
+
+  try {
+    const { data } = await axios.post(`${GRAPH_URL}/discover/smart`, {
+      query,
+      min_score,
+      limit,
+      pagerank_weight,
+      relevancy_weight
+    });
+
+    res.json({
+      ...data,
+      query_cost: QUERY_PRICE,
+      payment_id: (req as any).x402?.paymentId
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Smart discovery failed' });
+  }
+});
+
+// Register agent specification
+app.post('/paid/agents/register', async (req: Request, res: Response) => {
+  const { address, name, description, capabilities, tags, category } = req.body;
+
+  if (!address || !name) {
+    res.status(400).json({ error: 'Address and name are required' });
+    return;
+  }
+
+  try {
+    const { data } = await axios.post(`${GRAPH_URL}/agents/register`, {
+      address,
+      name,
+      description: description || '',
+      capabilities: capabilities || [],
+      tags: tags || [],
+      category: category || 'general'
+    });
+
+    res.json({
+      ...data,
+      payment_id: (req as any).x402?.paymentId
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Agent registration failed' });
+  }
+});
+
+// Get agent specification
+app.get('/paid/agents/:address/spec', async (req: Request, res: Response) => {
+  const { address } = req.params;
+
+  try {
+    const { data } = await axios.get(`${GRAPH_URL}/agents/${address}/spec`);
+    res.json({
+      ...data,
+      query_cost: QUERY_PRICE,
+      payment_id: (req as any).x402?.paymentId
+    });
+  } catch (e: any) {
+    if (e.response?.status === 404) {
+      res.status(404).json({ error: 'Agent specification not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to get agent spec' });
+    }
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════╗

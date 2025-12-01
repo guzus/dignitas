@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { travelAgents, mockAgents, Agent } from '@/data/mockData';
+import { smartDiscover, recordInteraction } from '@/lib/api';
 
 const DemoPanel = () => {
   const [step, setStep] = useState(1);
@@ -29,44 +29,36 @@ const DemoPanel = () => {
       await new Promise(r => setTimeout(r, 1000));
       addLog('Payment confirmed: $0.001 (USDC)');
 
-      // 2. Simulate LLM Routing
-      setRoutingStatus("Analyzing intent...");
-      await new Promise(r => setTimeout(r, 800));
-      setRoutingStatus("Matching capabilities...");
-      await new Promise(r => setTimeout(r, 800));
+      // 2. Call Smart Discovery API with LLM routing
+      setRoutingStatus("Analyzing intent with Gemini...");
+      await new Promise(r => setTimeout(r, 500));
+      setRoutingStatus("Computing relevancy scores...");
+      
+      const response = await smartDiscover(query, {
+        limit: 5,
+        pagerankWeight: 0.4,
+        relevancyWeight: 0.6
+      });
+
       setRoutingStatus("Filtering by reputation...");
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 500));
 
-      // 3. Match agents based on query keywords
-      const queryLower = query.toLowerCase();
-      let matchedAgents: Agent[];
-
-      // Check for travel-related queries
-      if (queryLower.includes('travel') || queryLower.includes('trip') || queryLower.includes('vacation') || queryLower.includes('flight') || queryLower.includes('hotel')) {
-        // Return travel agents sorted by score descending
-        matchedAgents = [...travelAgents].sort((a, b) => b.score - a.score);
-        addLog('Detected intent: Travel Planning');
-      } else if (queryLower.includes('defi') || queryLower.includes('yield') || queryLower.includes('trading')) {
-        matchedAgents = mockAgents.filter(a => a.capabilities.some(c => ['defi', 'trading', 'yield'].includes(c))).slice(0, 3);
-        addLog('Detected intent: DeFi Services');
-      } else if (queryLower.includes('security') || queryLower.includes('audit')) {
-        matchedAgents = mockAgents.filter(a => a.capabilities.some(c => ['audit', 'security'].includes(c))).slice(0, 3);
-        addLog('Detected intent: Security Services');
-      } else {
-        // Default to top 3 agents by score
-        matchedAgents = [...mockAgents].sort((a, b) => b.score - a.score).slice(0, 3);
-        addLog('Using top-ranked agents');
-      }
-
-      // Format agents for display with match scores
-      const formattedAgents = matchedAgents.map((a, i) => ({
-        ...a,
-        capability: a.capabilities[0]?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General',
-        matchScore: 95 - (i * 5)
+      // Format agents for display
+      const formattedAgents = response.agents.map((a) => ({
+        address: a.address,
+        name: a.name || `Agent ${a.address.slice(2, 6)}`,
+        description: a.description || 'AI Agent',
+        score: a.pagerank_score,
+        relevancyScore: a.relevancy_score,
+        combinedScore: a.combined_score,
+        category: a.category || 'general',
+        capability: a.category?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'General',
+        matchScore: Math.round(a.relevancy_score * 100)
       }));
 
       setResults(formattedAgents);
       addLog(`LLM Router found ${formattedAgents.length} agents matching "${query}"`);
+      addLog(`Weights: PageRank=${response.weights.pagerank}, Relevancy=${response.weights.relevancy}`);
       setStep(2);
     } catch (e: any) {
       addLog('Error: ' + e.message);
@@ -87,7 +79,20 @@ const DemoPanel = () => {
     await new Promise(r => setTimeout(r, 2000));
     addLog('Transaction successful!');
     addLog('Recording feedback on-chain...');
-    await new Promise(r => setTimeout(r, 1000));
+    
+    // Record the interaction via API
+    try {
+      await recordInteraction(
+        '0x0000000000000000000000000000000000000001', // Demo user address
+        selectedAgent.address,
+        'x402'
+      );
+      addLog('Interaction recorded in graph engine.');
+    } catch (e) {
+      addLog('(Demo mode: interaction logged locally)');
+    }
+    
+    await new Promise(r => setTimeout(r, 500));
     addLog('Feedback recorded. Trust score updated.');
     setStep(4);
     setLoading(false);

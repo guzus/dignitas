@@ -1,0 +1,103 @@
+steps:
+  # ============ GRAPH ENGINE ============
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-graph-engine'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/dignitas-graph-engine:${_TAG}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/dignitas-graph-engine:latest'
+      - './graph_engine'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-graph-engine'
+    args: ['push', 'gcr.io/$PROJECT_ID/dignitas-graph-engine:${_TAG}']
+    waitFor: ['build-graph-engine']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-graph-engine-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/dignitas-graph-engine:latest']
+    waitFor: ['build-graph-engine']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-graph-engine'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'dignitas-graph-engine'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/dignitas-graph-engine:${_TAG}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'GEMINI_API_KEY=${_GEMINI_API_KEY}'
+      - '--memory'
+      - '512Mi'
+    waitFor: ['push-graph-engine']
+
+  # Get the Graph Engine URL
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'get-graph-engine-url'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gcloud run services describe dignitas-graph-engine \
+          --region=${_REGION} \
+          --format='value(status.url)' > /workspace/graph_engine_url.txt
+    waitFor: ['deploy-graph-engine']
+
+  # ============ API SERVER ============
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-api'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/dignitas-api:${_TAG}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/dignitas-api:latest'
+      - './api'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-api'
+    args: ['push', 'gcr.io/$PROJECT_ID/dignitas-api:${_TAG}']
+    waitFor: ['build-api']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-api-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/dignitas-api:latest']
+    waitFor: ['build-api']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-api'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        GRAPH_URL=$$(cat /workspace/graph_engine_url.txt)
+        gcloud run deploy dignitas-api \
+          --image gcr.io/$PROJECT_ID/dignitas-api:${_TAG} \
+          --region ${_REGION} \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-env-vars "GRAPH_ENGINE_URL=$$GRAPH_URL"
+    waitFor: ['push-api', 'get-graph-engine-url']
+
+substitutions:
+  _REGION: us-central1
+  _GEMINI_API_KEY: ''
+  _TAG: latest
+
+images:
+  - 'gcr.io/$PROJECT_ID/dignitas-graph-engine:${_TAG}'
+  - 'gcr.io/$PROJECT_ID/dignitas-graph-engine:latest'
+  - 'gcr.io/$PROJECT_ID/dignitas-api:${_TAG}'
+  - 'gcr.io/$PROJECT_ID/dignitas-api:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
