@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Search, DollarSign, CheckCircle, ArrowRight, Loader2, BrainCircuit, MessageSquare, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { Search, DollarSign, CheckCircle, ArrowRight, Loader2, BrainCircuit, MessageSquare, Zap, RotateCcw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,16 @@ const DemoPanel = () => {
   const [logs, setLogs] = useState<string[]>([]);
 
   const addLog = (msg: string) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
+
+  const handleStartOver = () => {
+    setStep(1);
+    setLogs([]);
+    setResults([]);
+    setSelectedAgent(null);
+    setQuery("");
+    setLoading(false);
+    setRoutingStatus("");
+  };
 
   const handleDiscover = async () => {
     if (!query) return;
@@ -106,7 +116,20 @@ const DemoPanel = () => {
             <Zap className="h-5 w-5 text-orange-500" />
             Live Demo
           </CardTitle>
-          <Badge variant="secondary" className="bg-slate-800">Step {step} of 4</Badge>
+          <div className="flex items-center gap-2">
+            {step > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleStartOver}
+                className="text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Start Over
+              </Button>
+            )}
+            <Badge variant="secondary" className="bg-slate-800">Step {step} of 4</Badge>
+          </div>
         </div>
         <CardDescription>AI-driven agent discovery and reputation protocol.</CardDescription>
       </CardHeader>
@@ -357,15 +380,10 @@ const DemoPanel = () => {
               </div>
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  setStep(1);
-                  setLogs([]);
-                  setResults([]);
-                  setSelectedAgent(null);
-                  setQuery("");
-                }}
+                onClick={handleStartOver}
                 className="w-full max-w-xs border-slate-700 hover:bg-slate-800"
               >
+                <RotateCcw className="h-4 w-4 mr-2" />
                 Start New Task
               </Button>
             </motion.div>
