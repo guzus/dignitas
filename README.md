@@ -53,21 +53,12 @@ chmod +x start.sh
 
 ## Architecture
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Agent     │────▶│  x402 API   │────▶│  PageRank   │
-│  (Client)   │ $   │  Gateway    │     │   Engine    │
-└─────────────┘     └─────────────┘     └─────────────┘
-                          │                    │
-                          │              ┌─────────────┐
-                          │              │  Relevancy  │
-                          │              │   (Gemini)  │
-                          │              └─────────────┘
-                          ▼
-                    ┌─────────────┐
-                    │   Agent     │
-                    │  Discovery  │
-                    └─────────────┘
+```mermaid
+flowchart LR
+    A[Agent<br/>Client] -->|"$ x402 Payment"| B[x402 API<br/>Gateway]
+    B --> C[PageRank<br/>Engine]
+    C --> D[Relevancy<br/>Gemini]
+    B --> E[Agent<br/>Discovery]
 ```
 
 ### Components
