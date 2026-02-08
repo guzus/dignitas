@@ -202,6 +202,7 @@ def seed_demo_data():
             ],
             "tags": ["development", "security", "quality", "audit"],
             "category": "development",
+            "ens_name": "codeguard.eth",
         },
         {
             "address": agents[1],
@@ -218,6 +219,7 @@ def seed_demo_data():
             ],
             "tags": ["data", "analytics", "ML", "visualization", "insights"],
             "category": "analytics",
+            "ens_name": "datamind.eth",
         },
         {
             "address": agents[2],
@@ -236,6 +238,7 @@ def seed_demo_data():
             ],
             "tags": ["devops", "infrastructure", "automation", "cloud"],
             "category": "operations",
+            "ens_name": "infrabot.eth",
         },
         {
             "address": agents[3],
@@ -253,6 +256,7 @@ def seed_demo_data():
             ],
             "tags": ["content", "writing", "marketing", "SEO", "social"],
             "category": "content",
+            "ens_name": "contentcraft.eth",
         },
         {
             "address": agents[4],
@@ -269,6 +273,7 @@ def seed_demo_data():
             ],
             "tags": ["research", "academic", "knowledge", "papers"],
             "category": "research",
+            "ens_name": "researchbot.eth",
         },
         {
             "address": agents[5],
@@ -301,6 +306,7 @@ def seed_demo_data():
             ],
             "tags": ["finance", "trading", "crypto", "DeFi", "blockchain"],
             "category": "finance",
+            "ens_name": "alphatrader.eth",
         },
         {
             "address": agents[7],
@@ -749,6 +755,7 @@ class AgentSpecRequest(BaseModel):
     capabilities: List[str] = []
     tags: List[str] = []
     category: str = "general"
+    ens_name: Optional[str] = None
 
 
 class SmartDiscoverRequest(BaseModel):
@@ -780,7 +787,7 @@ def get_agent_score(agent: str):
 
 @app.get("/leaderboard")
 def get_leaderboard(limit: int = 10, min_score: float = 0):
-    """Get top agents with their specifications."""
+    """Get top agents with their specifications and ENS names."""
     top = engine.get_top_agents(limit * 2)  # Get extra to filter
     filtered = [(a, s) for a, s in top if s >= min_score][:limit]
     agents = []
@@ -793,13 +800,15 @@ def get_leaderboard(limit: int = 10, min_score: float = 0):
             agent_data["capabilities"] = spec.get("capabilities", [])
             agent_data["tags"] = spec.get("tags", [])
             agent_data["category"] = spec.get("category", "general")
+            if spec.get("ens_name"):
+                agent_data["ens_name"] = spec["ens_name"]
         agents.append(agent_data)
     return {"agents": agents}
 
 
 @app.get("/discover")
 def discover_agents(min_score: float = 0, limit: int = 10):
-    """Discover agents above threshold with their specifications."""
+    """Discover agents above threshold with their specifications and ENS names."""
     top = engine.get_top_agents(50)
     filtered = [(a, s) for a, s in top if s >= min_score][:limit]
     agents = []
@@ -812,6 +821,8 @@ def discover_agents(min_score: float = 0, limit: int = 10):
             agent_data["capabilities"] = spec.get("capabilities", [])
             agent_data["tags"] = spec.get("tags", [])
             agent_data["category"] = spec.get("category", "general")
+            if spec.get("ens_name"):
+                agent_data["ens_name"] = spec["ens_name"]
         agents.append(agent_data)
     return {
         "agents": agents,
@@ -833,9 +844,9 @@ def add_interaction(req: InteractionRequest):
 
 @app.post("/agents/register")
 def register_agent(req: AgentSpecRequest):
-    """Register or update an agent's specification."""
+    """Register or update an agent's specification with optional ENS name."""
     relevancy_engine.register_agent(req.address, req.model_dump())
-    return {"status": "registered", "address": req.address.lower()}
+    return {"status": "registered", "address": req.address.lower(), "ens_name": req.ens_name}
 
 
 @app.get("/agents/{address}/spec")

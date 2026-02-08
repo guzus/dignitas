@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 500px;
+    height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0e1a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .shield {
+    width: 180px;
+    height: 200px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .shield svg {
+    width: 100%;
+    height: 100%;
+  }
+  .text {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: 12px;
+    color: #e2e8f0;
+  }
+  .subtitle {
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-top: -12px;
+  }
+</style>
+</head>
+<body>
+  <div class="logo-container">
+    <div class="shield">
+      <svg viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shield shape -->
+        <path d="M60 8L10 30V70C10 100 35 128 60 135C85 128 110 100 110 70V30L60 8Z"
+              fill="none" stroke="url(#grad1)" stroke-width="3"/>
+        <!-- Graph nodes -->
+        <circle cx="60" cy="55" r="8" fill="#34d399"/>
+        <circle cx="40" cy="80" r="6" fill="#22d3ee"/>
+        <circle cx="80" cy="80" r="6" fill="#22d3ee"/>
+        <circle cx="45" cy="105" r="5" fill="#f59e0b"/>
+        <circle cx="75" cy="105" r="5" fill="#f59e0b"/>
+        <circle cx="60" cy="35" r="5" fill="#34d399"/>
+        <!-- Graph edges -->
+        <line x1="60" y1="55" x2="40" y2="80" stroke="#34d399" stroke-width="1.5" opacity="0.6"/>
+        <line x1="60" y1="55" x2="80" y2="80" stroke="#34d399" stroke-width="1.5" opacity="0.6"/>
+        <line x1="40" y1="80" x2="45" y2="105" stroke="#22d3ee" stroke-width="1.2" opacity="0.5"/>
+        <line x1="80" y1="80" x2="75" y2="105" stroke="#22d3ee" stroke-width="1.2" opacity="0.5"/>
+        <line x1="40" y1="80" x2="80" y2="80" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+        <line x1="60" y1="35" x2="60" y2="55" stroke="#34d399" stroke-width="1.5" opacity="0.6"/>
+        <line x1="45" y1="105" x2="75" y2="105" stroke="#f59e0b" stroke-width="1" opacity="0.4"/>
+        <defs>
+          <linearGradient id="grad1" x1="10" y1="8" x2="110" y2="135">
+            <stop offset="0%" stop-color="#34d399"/>
+            <stop offset="100%" stop-color="#22d3ee"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="text">DIGNITAS</div>
+    <div class="subtitle">Reputation Layer for AI Agents</div>
+  </div>
+</body>
+</html>

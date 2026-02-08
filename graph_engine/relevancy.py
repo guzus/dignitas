@@ -28,6 +28,7 @@ class RelevancyEngine:
             "capabilities": spec.get("capabilities", []),
             "tags": spec.get("tags", []),
             "category": spec.get("category", "general"),
+            "ens_name": spec.get("ens_name"),
         }
 
     def get_agent_spec(self, address: str) -> Optional[dict]:

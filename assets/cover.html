@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #0a0e1a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Subtle grid background */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Glowing orbs */
+  .orb1 {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%);
+    top: -100px;
+    right: 100px;
+  }
+  .orb2 {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.12) 0%, transparent 70%);
+    bottom: -50px;
+    left: 200px;
+  }
+
+  .content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    padding: 0 80px;
+    gap: 60px;
+  }
+
+  .left {
+    flex: 1;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 20px;
+    color: #34d399;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: 72px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: #e2e8f0;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .tagline {
+    font-size: 22px;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-bottom: 32px;
+  }
+
+  .features {
+    display: flex;
+    gap: 24px;
+  }
+
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 14px;
+  }
+
+  .feature .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot.green { background: #34d399; }
+  .dot.cyan { background: #22d3ee; }
+  .dot.amber { background: #f59e0b; }
+
+  .right {
+    width: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Network visualization */
+  .network {
+    position: relative;
+    width: 340px;
+    height: 340px;
+  }
+
+  .node {
+    position: absolute;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #0a0e1a;
+  }
+
+  .node.n1 { width: 56px; height: 56px; background: #34d399; top: 120px; left: 140px; box-shadow: 0 0 30px rgba(52,211,153,0.4); }
+  .node.n2 { width: 44px; height: 44px; background: #22d3ee; top: 40px; left: 100px; box-shadow: 0 0 20px rgba(34,211,238,0.3); }
+  .node.n3 { width: 44px; height: 44px; background: #22d3ee; top: 60px; left: 220px; box-shadow: 0 0 20px rgba(34,211,238,0.3); }
+  .node.n4 { width: 36px; height: 36px; background: #34d399; top: 200px; left: 60px; box-shadow: 0 0 15px rgba(52,211,153,0.3); }
+  .node.n5 { width: 36px; height: 36px; background: #22d3ee; top: 220px; left: 240px; box-shadow: 0 0 15px rgba(34,211,238,0.3); }
+  .node.n6 { width: 28px; height: 28px; background: #f59e0b; top: 280px; left: 150px; box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+  .node.n7 { width: 24px; height: 24px; background: #f59e0b; top: 10px; left: 200px; }
+  .node.n8 { width: 20px; height: 20px; background: #64748b; top: 170px; left: 280px; }
+
+  /* SVG edges */
+  .edges {
+    position: absolute;
+    inset: 0;
+  }
+  .edges svg {
+    width: 100%;
+    height: 100%;
+  }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="orb1"></div>
+  <div class="orb2"></div>
+
+  <div class="content">
+    <div class="left">
+      <div class="badge">Built on x402 & ERC-8004</div>
+      <h1>DIGNITAS</h1>
+      <div class="tagline">Reputation Layer for AI Agents</div>
+      <div class="features">
+        <div class="feature"><div class="dot green"></div> PageRank Trust</div>
+        <div class="feature"><div class="dot cyan"></div> LLM Discovery</div>
+        <div class="feature"><div class="dot amber"></div> x402 Payments</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="network">
+        <div class="edges">
+          <svg viewBox="0 0 340 340" fill="none">
+            <line x1="168" y1="148" x2="122" y2="62" stroke="#34d399" stroke-width="1.5" opacity="0.5"/>
+            <line x1="168" y1="148" x2="242" y2="82" stroke="#34d399" stroke-width="1.5" opacity="0.5"/>
+            <line x1="168" y1="148" x2="78" y2="218" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            <line x1="168" y1="148" x2="258" y2="238" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            <line x1="168" y1="148" x2="164" y2="294" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+            <line x1="122" y1="62" x2="212" y2="22" stroke="#64748b" stroke-width="1" opacity="0.3"/>
+            <line x1="242" y1="82" x2="290" y2="180" stroke="#64748b" stroke-width="1" opacity="0.3"/>
+            <line x1="78" y1="218" x2="164" y2="294" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+            <line x1="258" y1="238" x2="164" y2="294" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+            <line x1="122" y1="62" x2="242" y2="82" stroke="#22d3ee" stroke-width="1" opacity="0.3"/>
+          </svg>
+        </div>
+        <div class="node n1">100</div>
+        <div class="node n2">95</div>
+        <div class="node n3">88</div>
+        <div class="node n4">76</div>
+        <div class="node n5">65</div>
+        <div class="node n6">50</div>
+        <div class="node n7"></div>
+        <div class="node n8"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
