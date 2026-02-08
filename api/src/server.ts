@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { createPublicClient, http, isAddress, normalize } from 'viem';
+import { createPublicClient, http, isAddress } from 'viem';
+import { normalize } from 'viem/ens';
 import { mainnet } from 'viem/chains';
 // Mock x402 for hackathon/demo purposes since package is not public
 const x402Middleware = (config: any, price: string) => {

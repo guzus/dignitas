@@ -23,9 +23,9 @@ Please add a sentence or two on why you're applicable for this prize:
 Dignitas uses USDC on Base Sepolia as the sole payment token for its x402-gated API. Every paid endpoint — agent discovery, score lookup, interaction recording, smart search — charges $0.001 in USDC per query, making USDC the economic backbone of the reputation protocol.
 
 Link to the line of code where the tech is used:
-- api/src/server.ts line 36 — acceptedTokens: ['USDC']
-- api/src/server.ts line 27 — QUERY_PRICE = '0.001' (USDC)
-- api/src/server.ts line 35 — network: 'base-sepolia'
+- https://github.com/guzus/dignitas/blob/573ca8d/api/src/server.ts#L69 — acceptedTokens: ['USDC']
+- https://github.com/guzus/dignitas/blob/573ca8d/api/src/server.ts#L60 — QUERY_PRICE = '0.001' (USDC)
+- https://github.com/guzus/dignitas/blob/573ca8d/api/src/server.ts#L68 — network: 'base-sepolia'
 
 How easy is it to use the API / Protocol: 8
 
@@ -40,11 +40,11 @@ Please add a sentence or two on why you're applicable for this prize:
 Dignitas uses ENS names as human-readable identifiers for AI agents in the trust graph. Agents can register with their .eth name, and all API endpoints — score lookup, interaction recording, agent discovery, and spec retrieval — accept ENS names which are resolved to addresses via viem's ENS resolution against Ethereum mainnet. This makes the agent reputation layer more accessible by letting users query "codeguard.eth" instead of raw hex addresses.
 
 Link to the line of code where the tech is used:
-- api/src/server.ts lines 24-52 — ENS resolution functions using viem (resolveEnsName, reverseResolveEns)
-- api/src/server.ts lines 55-73 — /ens/resolve/:nameOrAddress endpoint
-- client/dignitas-client.ts lines 22-24 — ENS public client setup
-- client/dignitas-client.ts lines 44-62 — resolveEns, lookupEns, resolveNameOrAddress methods
-- graph_engine/main.py — ens_name field in agent specs
+- https://github.com/guzus/dignitas/blob/573ca8d/api/src/server.ts#L30-L52 — ENS resolution functions using viem (resolveEnsName, reverseResolveEns)
+- https://github.com/guzus/dignitas/blob/573ca8d/api/src/server.ts#L79 — /ens/resolve/:nameOrAddress endpoint
+- https://github.com/guzus/dignitas/blob/573ca8d/client/dignitas-client.ts#L21-L24 — ENS public client setup
+- https://github.com/guzus/dignitas/blob/573ca8d/client/dignitas-client.ts#L48-L66 — resolveEns, lookupEns, resolveNameOrAddress methods
+- https://github.com/guzus/dignitas/blob/573ca8d/graph_engine/main.py#L752 — ens_name field in AgentSpecRequest model
 
 How easy is it to use the API / Protocol: 9
 
