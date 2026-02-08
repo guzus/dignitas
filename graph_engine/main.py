@@ -740,6 +740,7 @@ class InteractionRequest(BaseModel):
     from_agent: str
     to_agent: str
     interaction_type: str  # 'x402' or 'feedback'
+    tx_hash: Optional[str] = None  # Base Sepolia transaction hash
 
 
 class AgentSpecRequest(BaseModel):
@@ -749,6 +750,7 @@ class AgentSpecRequest(BaseModel):
     capabilities: List[str] = []
     tags: List[str] = []
     category: str = "general"
+    ens_name: Optional[str] = None  # ENS name if available
 
 
 class SmartDiscoverRequest(BaseModel):
@@ -780,7 +782,7 @@ def get_agent_score(agent: str):
 
 @app.get("/leaderboard")
 def get_leaderboard(limit: int = 10, min_score: float = 0):
-    """Get top agents with their specifications."""
+    """Get top agents with their specifications and ENS names."""
     top = engine.get_top_agents(limit * 2)  # Get extra to filter
     filtered = [(a, s) for a, s in top if s >= min_score][:limit]
     agents = []
@@ -793,8 +795,22 @@ def get_leaderboard(limit: int = 10, min_score: float = 0):
             agent_data["capabilities"] = spec.get("capabilities", [])
             agent_data["tags"] = spec.get("tags", [])
             agent_data["category"] = spec.get("category", "general")
+            agent_data["ens_name"] = spec.get("ens_name")
         agents.append(agent_data)
     return {"agents": agents}
+
+
+@app.get("/graph/links")
+def get_graph_links():
+    """Get all edges in the trust graph for visualization."""
+    links = []
+    for u, v, data in engine.graph.edges(data=True):
+        links.append({
+            "source": u,
+            "target": v,
+            "weight": round(data.get("weight", 1.0), 4),
+        })
+    return {"links": links, "count": len(links)}
 
 
 @app.get("/discover")
@@ -821,11 +837,15 @@ def discover_agents(min_score: float = 0, limit: int = 10):
 
 @app.post("/interactions")
 def add_interaction(req: InteractionRequest):
-    """Record new interaction."""
+    """Record new interaction with optional Base Sepolia tx reference."""
     engine.add_interaction(
         req.from_agent.lower(), req.to_agent.lower(), req.interaction_type
     )
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "tx_hash": req.tx_hash,
+        "explorer": f"https://sepolia.basescan.org/tx/{req.tx_hash}" if req.tx_hash else None,
+    }
 
 
 # --- Agent Specification Endpoints ---
@@ -833,9 +853,14 @@ def add_interaction(req: InteractionRequest):
 
 @app.post("/agents/register")
 def register_agent(req: AgentSpecRequest):
-    """Register or update an agent's specification."""
-    relevancy_engine.register_agent(req.address, req.model_dump())
-    return {"status": "registered", "address": req.address.lower()}
+    """Register or update an agent's specification with optional ENS name."""
+    spec_data = req.model_dump()
+    relevancy_engine.register_agent(req.address, spec_data)
+    return {
+        "status": "registered",
+        "address": req.address.lower(),
+        "ens_name": req.ens_name,
+    }
 
 
 @app.get("/agents/{address}/spec")

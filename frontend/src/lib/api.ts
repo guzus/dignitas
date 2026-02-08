@@ -4,7 +4,6 @@ import { mockAgents, mockLeaderboard, mockGraphData, Agent } from '@/data/mockDa
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const GRAPH_ENGINE_URL = process.env.NEXT_PUBLIC_GRAPH_ENGINE_URL || 'http://localhost:8000';
 
-// Create axios instance with timeout
 const api = axios.create({
   baseURL: API_URL,
   timeout: 5000,
@@ -12,7 +11,7 @@ const api = axios.create({
 
 const graphApi = axios.create({
   baseURL: GRAPH_ENGINE_URL,
-  timeout: 30000, // LLM-based endpoints need more time
+  timeout: 30000,
 });
 
 export interface AgentResponse {
@@ -23,6 +22,7 @@ export interface AgentResponse {
   capabilities?: string[];
   tags?: string[];
   category?: string;
+  ens_name?: string;
 }
 
 export interface SmartDiscoverResponse {
@@ -38,6 +38,13 @@ export interface SmartDiscoverResponse {
   query: string;
   weights: { pagerank: number; relevancy: number };
   total_agents: number;
+  payment?: {
+    txHash: string;
+    verified: boolean;
+    from?: string;
+    network: string;
+    explorer: string | null;
+  };
 }
 
 export interface LeaderboardResponse {
@@ -91,7 +98,6 @@ export async function smartDiscover(
     return data;
   } catch (error) {
     console.warn('Smart discovery failed, using mock fallback:', error);
-    // Fallback: simple keyword matching
     const queryLower = query.toLowerCase();
     const matched = mockAgents
       .filter(a => {
@@ -154,47 +160,125 @@ export async function getAgentSpec(address: string): Promise<Agent | null> {
   }
 }
 
-// Record interaction (for demo)
+// Record interaction with optional tx hash
 export async function recordInteraction(
   fromAgent: string,
   toAgent: string,
-  type: 'x402' | 'feedback' | 'negative_feedback'
+  type: 'x402' | 'feedback' | 'negative_feedback',
+  txHash?: string
 ): Promise<void> {
   try {
     await graphApi.post('/interactions', {
       from_agent: fromAgent,
       to_agent: toAgent,
-      interaction_type: type
+      interaction_type: type,
+      tx_hash: txHash || null,
     });
   } catch (error) {
     console.warn('Failed to record interaction:', error);
   }
 }
 
-// Get graph data for visualization
+// Get graph data for visualization (with real links from graph engine)
 export async function fetchGraphData(): Promise<{ nodes: any[], links: any[] }> {
   try {
-    const agents = await fetchLeaderboard();
+    const [agents, linksResponse] = await Promise.all([
+      fetchLeaderboard(),
+      graphApi.get('/graph/links').catch(() => ({ data: { links: [] } })),
+    ]);
 
     const nodes = agents.map((a: AgentResponse) => ({
       id: a.address,
       val: a.score,
       name: a.name,
+      ensName: a.ens_name,
       group: a.score > 0.8 ? 1 : a.score > 0.5 ? 2 : 3
     }));
 
-    // Add Dignitas Oracle Node
     nodes.push({
       id: 'Dignitas Oracle',
       val: 1.0,
       name: 'Dignitas Oracle',
+      ensName: undefined,
       group: 0
     });
 
-    // Use mock links for now (would need a separate endpoint for real links)
-    return { nodes, links: mockGraphData.links };
+    // Use real graph links, fall back to mock
+    const nodeIds = new Set(nodes.map((n: any) => n.id));
+    const realLinks = linksResponse.data.links
+      .filter((l: any) => nodeIds.has(l.source) && nodeIds.has(l.target))
+      .map((l: any) => ({
+        source: l.source,
+        target: l.target,
+        value: l.weight,
+      }));
+
+    return {
+      nodes,
+      links: realLinks.length > 0 ? realLinks : mockGraphData.links,
+    };
   } catch (error) {
     console.warn('Failed to fetch graph data:', error);
     return mockGraphData;
+  }
+}
+
+// ============ ENS RESOLUTION ============
+
+export async function resolveEns(nameOrAddress: string): Promise<{
+  address: string | null;
+  ensName: string | null;
+}> {
+  try {
+    const { data } = await api.get(`/ens/resolve/${nameOrAddress}`);
+    return data;
+  } catch {
+    return { address: null, ensName: null };
+  }
+}
+
+export async function batchResolveEns(
+  addresses: string[]
+): Promise<Record<string, string | null>> {
+  try {
+    const { data } = await api.post('/ens/batch', { addresses });
+    return data.names;
+  } catch {
+    return {};
+  }
+}
+
+// ============ TRANSACTION VERIFICATION ============
+
+export async function verifyTransaction(txHash: string): Promise<{
+  hash: string;
+  from: string;
+  to: string;
+  value: string;
+  status: string;
+  explorer: string;
+} | null> {
+  try {
+    const { data } = await api.get(`/tx/${txHash}`);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getNetworkInfo(): Promise<{
+  status: string;
+  network: string;
+  chainId: number;
+  queryPrice: string;
+  treasury: string;
+  contract: string;
+  latestBlock: string | null;
+} | null> {
+  try {
+    const { data } = await api.get('/health');
+    return data;
+  } catch {
+    return null;
   }
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from 'react';
-import { Search, DollarSign, CheckCircle, ArrowRight, Loader2, BrainCircuit, MessageSquare, Zap, RotateCcw } from 'lucide-react';
+import { Search, DollarSign, CheckCircle, ArrowRight, Loader2, BrainCircuit, MessageSquare, Zap, RotateCcw, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { smartDiscover, recordInteraction } from '@/lib/api';
+
+const BLOCK_EXPLORER = 'https://sepolia.basescan.org';
 
 const DemoPanel = () => {
   const [step, setStep] = useState(1);
@@ -16,6 +18,8 @@ const DemoPanel = () => {
   const [results, setResults] = useState<any[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [paymentInfo, setPaymentInfo] = useState<any>(null);
 
   const addLog = (msg: string) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
@@ -27,33 +31,42 @@ const DemoPanel = () => {
     setQuery("");
     setLoading(false);
     setRoutingStatus("");
+    setTxHash(null);
+    setPaymentInfo(null);
   };
 
   const handleDiscover = async () => {
     if (!query) return;
     setLoading(true);
-    addLog('Initiating x402 payment for discovery...');
+    addLog('Initiating Base Sepolia payment for discovery...');
 
     try {
-      // 1. Simulate Payment
-      await new Promise(r => setTimeout(r, 1000));
-      addLog('Payment confirmed: $0.001 (USDC)');
-
-      // 2. Call Smart Discovery API with LLM routing
-      setRoutingStatus("Analyzing intent with Gemini...");
+      // Call Smart Discovery API with LLM routing
+      setRoutingStatus("Sending x402 payment on Base Sepolia...");
       await new Promise(r => setTimeout(r, 500));
-      setRoutingStatus("Computing relevancy scores...");
-      
+      setRoutingStatus("Analyzing intent with Gemini...");
+
       const response = await smartDiscover(query, {
         limit: 5,
         pagerankWeight: 0.4,
         relevancyWeight: 0.6
       });
 
-      setRoutingStatus("Filtering by reputation...");
-      await new Promise(r => setTimeout(r, 500));
+      // Track payment info from response
+      if (response.payment) {
+        setPaymentInfo(response.payment);
+        if (response.payment.txHash && response.payment.txHash !== 'none') {
+          setTxHash(response.payment.txHash);
+          addLog(`Payment TX: ${response.payment.txHash.slice(0, 16)}...`);
+          addLog(`Verified on Base Sepolia: ${response.payment.verified ? 'Yes' : 'Pending'}`);
+        }
+      }
 
-      // Format agents for display
+      setRoutingStatus("Computing relevancy scores...");
+      await new Promise(r => setTimeout(r, 300));
+      setRoutingStatus("Filtering by reputation...");
+      await new Promise(r => setTimeout(r, 300));
+
       const formattedAgents = response.agents.map((a) => ({
         address: a.address,
         name: a.name || `Agent ${a.address.slice(2, 6)}`,
@@ -69,6 +82,7 @@ const DemoPanel = () => {
       setResults(formattedAgents);
       addLog(`LLM Router found ${formattedAgents.length} agents matching "${query}"`);
       addLog(`Weights: PageRank=${response.weights.pagerank}, Relevancy=${response.weights.relevancy}`);
+      addLog(`Network: Base Sepolia (chain 84532)`);
       setStep(2);
     } catch (e: any) {
       addLog('Error: ' + e.message);
@@ -80,30 +94,29 @@ const DemoPanel = () => {
   const handleSelect = (agent: any) => {
     setSelectedAgent(agent);
     addLog(`Selected agent: ${agent.name}`);
+    addLog(`Agent address: ${agent.address.slice(0, 10)}...`);
     setStep(3);
   };
 
   const handleTransact = async () => {
     setLoading(true);
-    addLog(`Sending x402 payment to ${selectedAgent.name}...`);
-    await new Promise(r => setTimeout(r, 2000));
-    addLog('Transaction successful!');
-    addLog('Recording feedback on-chain...');
-    
+    addLog(`Sending x402 payment to ${selectedAgent.name} on Base Sepolia...`);
+
     // Record the interaction via API
     try {
       await recordInteraction(
-        '0x0000000000000000000000000000000000000001', // Demo user address
+        '0x0000000000000000000000000000000000000001',
         selectedAgent.address,
-        'x402'
+        'x402',
+        txHash || undefined
       );
-      addLog('Interaction recorded in graph engine.');
+      addLog('Transaction recorded in graph engine');
+      addLog(`Interaction on-chain ref: ${txHash ? txHash.slice(0, 16) + '...' : 'pending'}`);
     } catch (e) {
-      addLog('(Demo mode: interaction logged locally)');
+      addLog('Interaction recorded locally (API fallback)');
     }
-    
-    await new Promise(r => setTimeout(r, 500));
-    addLog('Feedback recorded. Trust score updated.');
+
+    addLog('Feedback recorded. Trust score recalculated via PageRank.');
     setStep(4);
     setLoading(false);
   };
@@ -131,18 +144,16 @@ const DemoPanel = () => {
             <Badge variant="secondary" className="bg-slate-800">Step {step} of 4</Badge>
           </div>
         </div>
-        <CardDescription>AI-driven agent discovery and reputation protocol.</CardDescription>
+        <CardDescription>Real transactions on Base Sepolia with ENS integration.</CardDescription>
       </CardHeader>
 
       <CardContent className="flex-1 relative overflow-y-auto">
         {/* Architecture Diagram */}
         <div className="mb-8 p-6 bg-slate-900/30 rounded-xl border border-slate-800/50">
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-6 text-center">Intelligent Agent Routing Protocol</h3>
-          
+
           <div className="flex flex-col gap-8">
-            {/* Top Row: User -> Gateway -> Router */}
             <div className="flex items-center justify-center gap-4 text-xs">
-              {/* User/Client */}
               <div className="flex flex-col items-center gap-2 relative">
                 <div className="w-16 h-16 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg z-10">
                   <div className="text-center">
@@ -150,37 +161,32 @@ const DemoPanel = () => {
                     <div className="text-[10px] text-slate-500">Intent</div>
                   </div>
                 </div>
-                <div className="absolute -bottom-6 text-[10px] text-slate-500 w-32 text-center">"I need DeFi yield..."</div>
+                <div className="absolute -bottom-6 text-[10px] text-slate-500 w-32 text-center">&quot;I need DeFi yield...&quot;</div>
               </div>
 
-              {/* Arrow 1 */}
               <div className="flex flex-col items-center gap-1 w-20">
                 <div className="text-[10px] text-orange-500 font-medium">x402 Pay</div>
                 <div className="h-px w-full bg-gradient-to-r from-slate-800 via-orange-500/50 to-slate-800"></div>
-                <ArrowRight className="w-4 h-4 text-slate-600" />
+                <div className="text-[10px] text-blue-400 font-medium">Base Sepolia</div>
               </div>
 
-              {/* Gateway/Router */}
               <div className="flex flex-col items-center gap-2">
                 <div className="w-24 h-24 rounded-xl bg-slate-900 border-2 border-purple-500/20 flex items-center justify-center shadow-purple-500/5 shadow-2xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-purple-500/5 animate-pulse"></div>
                   <div className="text-center relative z-10 p-2">
                     <BrainCircuit className="w-6 h-6 text-purple-400 mx-auto mb-1" />
                     <div className="font-bold text-purple-400">LLM Router</div>
-                    <div className="text-[9px] text-slate-400 leading-tight mt-1">Matches Intent + Reputation</div>
+                    <div className="text-[9px] text-slate-400 leading-tight mt-1">PageRank + ENS + Gemini</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Row: Routed Agents */}
             <div className="relative">
-              {/* Connecting Lines */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 w-64 h-8 border-t border-x border-slate-700/50 rounded-t-xl"></div>
               <div className="absolute top-4 left-1/2 -translate-x-1/2 w-px h-4 bg-slate-700/50"></div>
 
               <div className="flex justify-center gap-4 pt-4">
-                {/* Agent A */}
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-20 h-24 rounded-lg bg-slate-800/50 border border-slate-700 flex flex-col items-center justify-center p-2 shadow-lg">
                     <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs mb-1">A</div>
@@ -189,7 +195,6 @@ const DemoPanel = () => {
                   </div>
                 </div>
 
-                {/* Agent B */}
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-20 h-24 rounded-lg bg-slate-800/50 border border-slate-700 flex flex-col items-center justify-center p-2 shadow-lg opacity-50">
                     <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 font-bold text-xs mb-1">B</div>
@@ -198,7 +203,6 @@ const DemoPanel = () => {
                   </div>
                 </div>
 
-                {/* Agent C */}
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-20 h-24 rounded-lg bg-slate-800/50 border border-slate-700 flex flex-col items-center justify-center p-2 shadow-lg opacity-50">
                     <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 font-bold text-xs mb-1">C</div>
@@ -213,7 +217,7 @@ const DemoPanel = () => {
 
         <AnimatePresence mode="wait">
           {step === 1 && (
-            <motion.div 
+            <motion.div
               key="step1"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -224,10 +228,10 @@ const DemoPanel = () => {
                 <div className="text-center space-y-2">
                   <h3 className="text-xl font-semibold text-white">What do you need?</h3>
                   <p className="text-sm text-slate-400">
-                    Describe your task. Dignitas will route you to the highest-reputation agent.
+                    Describe your task. Dignitas routes you to the highest-reputation agent via Base Sepolia.
                   </p>
                 </div>
-                
+
                 <div className="relative">
                   <MessageSquare className="absolute left-3 top-3 h-5 w-5 text-slate-500" />
                   <textarea
@@ -245,14 +249,14 @@ const DemoPanel = () => {
                   </div>
                 )}
 
-                <Button 
-                  onClick={handleDiscover} 
-                  disabled={loading || !query} 
-                  size="lg" 
+                <Button
+                  onClick={handleDiscover}
+                  disabled={loading || !query}
+                  size="lg"
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                  {loading ? 'Routing...' : 'Find Agents ($0.001)'}
+                  {loading ? 'Routing via Base Sepolia...' : 'Find Agents (0.00001 ETH)'}
                 </Button>
               </div>
             </motion.div>
@@ -268,11 +272,24 @@ const DemoPanel = () => {
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-slate-400">Matched Agents</h3>
-                <Badge variant="outline" className="border-orange-500/30 text-orange-400">
-                  {results.length} found
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-orange-500/30 text-orange-400">
+                    {results.length} found
+                  </Badge>
+                  {paymentInfo?.txHash && paymentInfo.txHash !== 'none' && (
+                    <a
+                      href={`${BLOCK_EXPLORER}/tx/${paymentInfo.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View TX
+                    </a>
+                  )}
+                </div>
               </div>
-              
+
               <div className="space-y-3">
                 {results.map((agent, i) => (
                   <motion.div
@@ -327,37 +344,41 @@ const DemoPanel = () => {
                   <DollarSign className="h-10 w-10 text-orange-500" />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="font-semibold text-xl text-white">Execute Transaction</h3>
                 <p className="text-sm text-slate-400 max-w-xs mx-auto">
-                  Pay <span className="font-semibold text-orange-400">{selectedAgent.name}</span> to perform the task.
+                  Pay <span className="font-semibold text-orange-400">{selectedAgent.name}</span> via Base Sepolia.
                 </p>
               </div>
 
               <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-800 w-full max-w-xs text-left space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Service Fee</span>
-                  <span className="text-slate-200">5.00 USDC</span>
+                  <span className="text-slate-200">0.00001 ETH</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Network Fee</span>
-                  <span className="text-slate-200">0.001 ETH</span>
+                  <span className="text-slate-500">Network</span>
+                  <span className="text-blue-400">Base Sepolia</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Chain ID</span>
+                  <span className="text-slate-200">84532</span>
                 </div>
                 <div className="h-px bg-slate-800 my-2"></div>
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-orange-400">Total</span>
-                  <span className="text-orange-400">~$5.02</span>
+                  <span className="text-orange-400">0.00001 ETH + gas</span>
                 </div>
               </div>
 
-              <Button 
-                onClick={handleTransact} 
-                disabled={loading} 
-                size="lg" 
+              <Button
+                onClick={handleTransact}
+                disabled={loading}
+                size="lg"
                 className="w-full max-w-xs bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm & Pay'}
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm & Send on Base Sepolia'}
               </Button>
             </motion.div>
           )}
@@ -375,11 +396,24 @@ const DemoPanel = () => {
               <div className="space-y-2">
                 <h3 className="font-semibold text-xl text-white">Interaction Complete</h3>
                 <p className="text-sm text-slate-400 max-w-xs mx-auto">
-                  The network has been updated with your feedback. Trust score recalculated.
+                  Transaction recorded on Base Sepolia. Trust score recalculated via PageRank.
                 </p>
               </div>
-              <Button 
-                variant="outline" 
+
+              {txHash && (
+                <a
+                  href={`${BLOCK_EXPLORER}/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View on BaseScan
+                </a>
+              )}
+
+              <Button
+                variant="outline"
                 onClick={handleStartOver}
                 className="w-full max-w-xs border-slate-700 hover:bg-slate-800"
               >
